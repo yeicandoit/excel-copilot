@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Excel Assistant</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Excel Assistant</h1>
+    
+    <div class="file-section">
+      <input type="file" id="excelFile" accept=".xlsx,.xls" />
+      <button id="loadFile">Load Excel File</button>
+    </div>
+
+    <div class="chat-section">
+      <div id="chatHistory" class="chat-history"></div>
+      <div class="input-section">
+        <textarea id="userInput" placeholder="Ask me anything about your Excel data..."></textarea>
+        <button id="sendMessage">Send</button>
+      </div>
+    </div>
+
+    <div class="status-section">
+      <div id="status">Ready</div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
