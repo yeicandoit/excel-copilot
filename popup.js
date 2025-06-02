@@ -24,6 +24,14 @@ loadFileButton.addEventListener('click', async () => {
     currentExcelData = workbook;
     updateStatus('File loaded successfully');
     addMessage('System', 'Excel file loaded successfully. You can now ask questions about the data.');
+
+    // 发送消息到 content script 以在新标签页中显示 Excel 内容
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        type: 'OPEN_EXCEL',
+        excelData: arrayBuffer
+      });
+    });
   } catch (error) {
     updateStatus('Error loading file: ' + error.message);
   }
