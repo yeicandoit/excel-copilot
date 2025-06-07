@@ -6,12 +6,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(error => sendResponse({ error: error.message }));
     return true; // 保持消息通道开放
   } else if (request.type === 'OPEN_EXCEL') {
-    // 将 Excel 数据转换为 base64 字符串
-    const base64Data = btoa(String.fromCharCode.apply(null, new Uint8Array(request.excelData)));
-    
     // 创建新标签页的 URL
     const viewerUrl = chrome.runtime.getURL('excel-viewer.html');
-    const fullUrl = `${viewerUrl}?data=${encodeURIComponent(base64Data)}`;
+    const fullUrl = `${viewerUrl}`;
     
     // 在新标签页中打开
     chrome.tabs.create({ url: fullUrl });

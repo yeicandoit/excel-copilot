@@ -28,7 +28,7 @@
     }
   ],
   "web_accessible_resources": [{
-    "resources": ["excel-viewer.html", "excel-viewer.js"],
+    "resources": ["excel-viewer.html", "excel-viewer.js", "libs/exceljs.min.js"],
     "matches": ["<all_urls>"]
   }],
   "icons": {

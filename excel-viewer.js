@@ -1,17 +1,16 @@
-// 从 URL 参数中获取 Excel 数据
-const urlParams = new URLSearchParams(window.location.search);
-const excelData = urlParams.get('data');
+const excelFileInput = document.getElementById('excelFile');
+// 监听文件选择事件
+excelFileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) {
+    alert('Please select an Excel file');
+    return;
+  }
 
-if (excelData) {
-    // 解析 base64 编码的 Excel 数据
+  try {
+    const arrayBuffer = file.arrayBuffer();
+    // 1. 加载Excel文件
     const workbook = new ExcelJS.Workbook();
-    const data = atob(excelData);
-    const arrayBuffer = new ArrayBuffer(data.length);
-    const view = new Uint8Array(arrayBuffer);
-    for (let i = 0; i < data.length; i++) {
-        view[i] = data.charCodeAt(i);
-    }
-
     // 加载 Excel 数据
     workbook.xlsx.load(arrayBuffer).then(() => {
         const worksheet = workbook.getWorksheet(1);
@@ -45,6 +44,7 @@ if (excelData) {
         console.error('Error loading Excel file:', error);
         document.getElementById('excel-container').innerHTML = 'Error loading Excel file';
     });
-} else {
-    document.getElementById('excel-container').innerHTML = 'No Excel data provided';
-} 
+  } catch (error) {
+    document.getElementById('excel-container').innerHTML = 'Error loading file: ' + error.message;
+  }
+});
