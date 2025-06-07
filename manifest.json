@@ -7,7 +7,8 @@
     "storage",
     "activeTab",
     "scripting",
-    "downloads"
+    "downloads",
+    "tabs"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -26,6 +27,10 @@
       "js": ["content.js"]
     }
   ],
+  "web_accessible_resources": [{
+    "resources": ["excel-viewer.html", "excel-viewer.js", "libs/exceljs.min.js"],
+    "matches": ["<all_urls>"]
+  }],
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",

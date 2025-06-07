@@ -5,6 +5,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(sendResponse)
       .catch(error => sendResponse({ error: error.message }));
     return true; // 保持消息通道开放
+  } else if (request.type === 'OPEN_EXCEL') {
+    // 创建新标签页的 URL
+    const viewerUrl = chrome.runtime.getURL('excel-viewer.html');
+    const fullUrl = `${viewerUrl}`;
+    
+    // 在新标签页中打开
+    chrome.tabs.create({ url: fullUrl });
+    
+    sendResponse({ success: true });
   }
 });
 

@@ -2,35 +2,29 @@
 let currentExcelData = null;
 
 // DOM 元素
-const excelFileInput = document.getElementById('excelFile');
-const loadFileButton = document.getElementById('loadFile');
+const processExcel = document.getElementById('processExcel');
 const userInput = document.getElementById('userInput');
 const sendMessageButton = document.getElementById('sendMessage');
 const chatHistory = document.getElementById('chatHistory');
 const statusDiv = document.getElementById('status');
 
-// 加载Excel文件
-loadFileButton.addEventListener('click', async () => {
-  const file = excelFileInput.files[0];
-  if (!file) {
-    updateStatus('Please select an Excel file first');
-    return;
-  }
+processExcel.addEventListener("click", () => {
+  console.log("click processExcel");
+  // 发送消息到 content script 以在新标签页中显示 Excel 内容
+  chrome.runtime.sendMessage({ type: "OPEN_EXCEL" });
+});
 
-  try {
-    updateStatus('Loading file...');
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = await readExcelFile(arrayBuffer);
-    currentExcelData = workbook;
-    updateStatus('File loaded successfully');
-    addMessage('System', 'Excel file loaded successfully. You can now ask questions about the data.');
-  } catch (error) {
-    updateStatus('Error loading file: ' + error.message);
+// 防止窗口自动关闭
+document.addEventListener('click', function(e) {
+  if (e.target.tagName === 'BUTTON') {
+    e.preventDefault();
   }
 });
 
 // 发送消息
-sendMessageButton.addEventListener('click', async () => {
+sendMessageButton.addEventListener('click', async (e) => {
+  e.preventDefault(); // 防止按钮点击事件冒泡
+  
   const message = userInput.value.trim();
   if (!message) return;
 
