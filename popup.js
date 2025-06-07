@@ -25,14 +25,14 @@ excelFileInput.addEventListener('change', async (e) => {
 
   try {
     updateStatus('Loading file...');
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = await readExcelFile(arrayBuffer);
+    const arrayBuffer = file.arrayBuffer();
+    const workbook = readExcelFile(arrayBuffer);
     currentExcelData = workbook;
     updateStatus('File loaded successfully');
     addMessage('System', 'Excel file loaded successfully. You can now ask questions about the data.');
 
     // 发送消息到 content script 以在新标签页中显示 Excel 内容
-    await chrome.runtime.sendMessage({
+    chrome.runtime.sendMessage({
       type: 'OPEN_EXCEL',
       excelData: arrayBuffer
     });
