@@ -14,6 +14,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.tabs.create({ url: fullUrl });
     
     sendResponse({ success: true });
+  } else if (request.type === 'CHAT_MESSAGE') {
+    handleChatMessage(request.message)
+      .then(response => sendResponse(response))
+      .catch(error => {
+        console.error('Error handling chat message:', error);
+        sendResponse('Sorry, I encountered an error while processing your request.');
+      });
+    return true; // Required for async response
   }
 });
 
@@ -33,4 +41,41 @@ async function handleExcelProcessing(data) {
 // 监听插件安装事件
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Excel Assistant extension installed');
-}); 
+});
+
+// Function to handle chat messages with OpenAI
+async function handleChatMessage(message) {
+  try {
+    const response = await fetch('https://ai-gateway.vei.volces.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-reasoner",
+        messages: [
+          {
+            role: "system",
+            content: "You are an Excel data analysis assistant. Help users understand and analyze their Excel data."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get response from OpenAI');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling OpenAI:', error);
+    throw error;
+  }
+} 

@@ -7,6 +7,18 @@
             margin: 20px;
             font-family: Arial, sans-serif;
         }
+        .main-container {
+            display: flex;
+            gap: 20px;
+        }
+        .excel-section {
+            flex: 1;
+        }
+        .chat-section {
+            width: 400px;
+            border-left: 1px solid #ddd;
+            padding-left: 20px;
+        }
         #excel-container {
             margin-top: 20px;
         }
@@ -22,15 +34,78 @@
         th {
             background-color: #f2f2f2;
         }
+        .chat-history {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .input-section {
+            display: flex;
+            gap: 10px;
+        }
+        #userInput {
+            flex: 1;
+            height: 60px;
+            padding: 8px;
+            resize: none;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #sendMessage {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            align-self: flex-end;
+        }
+        #sendMessage:hover {
+            background-color: #45a049;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #e9ecef;
+            color: #212529;
+            margin-right: auto;
+        }
     </style>
 </head>
 <body>
     <h1>Excel Viewer</h1>
-    <div class="file-section">
-        <input type="file" id="excelFile" accept=".xlsx,.xls" />
+    <div class="main-container">
+        <div class="excel-section">
+            <div class="file-section">
+                <input type="file" id="excelFile" accept=".xlsx,.xls" />
+            </div>
+            <div id="excel-container"></div>
+        </div>
+        
+        <div class="chat-section">
+            <h2>Chat Assistant</h2>
+            <div id="chatHistory" class="chat-history"></div>
+            <div class="input-section">
+                <textarea id="userInput" placeholder="Ask me anything about your Excel data..."></textarea>
+                <button id="sendMessage">Send</button>
+            </div>
+        </div>
     </div>
-    <div id="excel-container"></div>
     <script src="libs/exceljs.min.js"></script>
     <script src="excel-viewer.js"></script>
+    <script src="chat.js"></script>
 </body>
 </html> 
