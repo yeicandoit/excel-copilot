@@ -2,13 +2,14 @@
   "manifest_version": 3,
   "name": "Excel Assistant",
   "version": "1.0",
-  "description": "A Chrome extension for Excel file operations with AI assistance",
+  "description": "An AI-powered Excel data analysis assistant",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting",
-    "downloads",
-    "tabs"
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://ai-gateway.vei.volces.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -28,7 +29,7 @@
     }
   ],
   "web_accessible_resources": [{
-    "resources": ["excel-viewer.html", "excel-viewer.js", "libs/exceljs.min.js"],
+    "resources": ["excel-viewer.html", "excel-viewer.js", "libs/exceljs.min.js", "chat.js"],
     "matches": ["<all_urls>"]
   }],
   "icons": {
