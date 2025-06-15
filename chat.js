@@ -47,13 +47,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let streaming = true;
         let assistantContent = '';
+        let assistantReason = '';
 
         // Listen for streaming responses
         function onStream(msg, sender, sendResponse) {
             if (msg.type === 'CHAT_STREAM') {
-                assistantContent += msg.content;
-                assistantDiv.textContent = assistantContent;
-                chatHistory.scrollTop = chatHistory.scrollHeight;
+                // 处理 reasoningContent
+                if (msg.reasoningContent) {
+                    let reasoningDiv = document.getElementById('reasoningContent');
+                    if (!reasoningDiv) {
+                        reasoningDiv = document.createElement('div');
+                        reasoningDiv.id = 'reasoningContent';
+                        reasoningDiv.style.background = '#fffbe6';
+                        reasoningDiv.style.border = '1px solid #ffe58f';
+                        reasoningDiv.style.padding = '8px 12px';
+                        reasoningDiv.style.marginBottom = '10px';
+                        reasoningDiv.style.borderRadius = '8px';
+                        reasoningDiv.style.color = '#ad8b00';
+                        chatHistory.parentNode.insertBefore(reasoningDiv, chatHistory);
+                    }
+                    assistantReason += msg.reasoningContent;
+                    reasoningDiv.textContent = assistantReason;
+                }
+                // 处理 assistant 内容
+                if (msg.content) {
+                    assistantContent += msg.content;
+                    assistantDiv.textContent = assistantContent;
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
             } else if (msg.type === 'CHAT_ERROR') {
                 streaming = false;
                 assistantDiv.textContent = msg.error;

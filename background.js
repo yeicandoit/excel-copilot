@@ -66,7 +66,7 @@ async function handleChatMessage(message, tabId) {
             content: message
           }
         ],
-        temperature: 0.7,
+        temperature: 0,
         stream: true
       })
     });
@@ -95,6 +95,14 @@ async function handleChatMessage(message, tabId) {
           const jsonStr = line.replace(/^data:/, '');
           const json = JSON.parse(jsonStr);
           const content = json.choices[0]?.delta?.content;
+          const reasoningContent = json.choices[0]?.delta?.reasoning_content;
+
+          if (reasoningContent) {
+            chrome.tabs.sendMessage(tabId, {
+              type: 'CHAT_STREAM',
+              reasoningContent: reasoningContent
+            });
+          }
           
           if (content) {
             chrome.tabs.sendMessage(tabId, {
