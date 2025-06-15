@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.textContent = content;
         chatHistory.appendChild(messageDiv);
         chatHistory.scrollTop = chatHistory.scrollHeight;
+        return messageDiv;
     }
 
     // Function to send message to background script
@@ -41,28 +42,33 @@ document.addEventListener('DOMContentLoaded', function() {
         addMessage(message, true);
         userInput.value = '';
 
-        // Show loading state
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'message assistant-message';
-        loadingDiv.textContent = 'Thinking...';
-        chatHistory.appendChild(loadingDiv);
+        // Show loading/streaming state
+        const assistantDiv = addMessage('', false);
+
+        let streaming = true;
+        let assistantContent = '';
+
+        // Listen for streaming responses
+        function onStream(msg, sender, sendResponse) {
+            if (msg.type === 'CHAT_STREAM') {
+                assistantContent += msg.content;
+                assistantDiv.textContent = assistantContent;
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            } else if (msg.type === 'CHAT_ERROR') {
+                streaming = false;
+                assistantDiv.textContent = msg.error;
+                chrome.runtime.onMessage.removeListener(onStream);
+            }
+        }
+        chrome.runtime.onMessage.addListener(onStream);
 
         try {
-            // Get response from background script
-            const response = await sendToBackground(message);
-            
-            // Remove loading message
-            chatHistory.removeChild(loadingDiv);
-            
-            // Add assistant response
-            addMessage(response);
+            // Get response from background script (starts streaming)
+            await sendToBackground(message);
         } catch (error) {
-            console.error('Error:', error);
-            // Remove loading message
-            chatHistory.removeChild(loadingDiv);
-            
-            // Show error message
-            addMessage('Sorry, I encountered an error while processing your request.');
+            streaming = false;
+            assistantDiv.textContent = 'Sorry, I encountered an error while processing your request.';
+            chrome.runtime.onMessage.removeListener(onStream);
         }
     });
 
@@ -73,4 +79,4 @@ document.addEventListener('DOMContentLoaded', function() {
             sendButton.click();
         }
     });
-}); 
+});
