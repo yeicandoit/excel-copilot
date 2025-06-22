@@ -81,12 +81,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         chatHistory.parentNode.insertBefore(reasoningDiv, chatHistory);
                     }
                     assistantReason += msg.reasoningContent;
-                    reasoningDiv.textContent = assistantReason;
+                    reasoningDiv.innerHTML = marked.parse(assistantReason);
                 }
                 // 处理 assistant 内容
                 if (msg.content) {
                     assistantContent += msg.content;
-                    assistantDiv.textContent = assistantContent;
+                    assistantDiv.innerHTML = marked.parse(assistantContent);
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                 }
             } else if (msg.type === 'CHAT_ERROR') {
@@ -114,4 +114,29 @@ document.addEventListener('DOMContentLoaded', function() {
             sendButton.click();
         }
     });
+});
+
+// 拖动分隔条调整 chat-section 宽度
+const resizer = document.getElementById('resizer');
+const chatSection = document.getElementById('chatSection');
+const mainContainer = document.querySelector('.main-container');
+let isResizing = false;
+
+resizer.addEventListener('mousedown', function(e) {
+    isResizing = true;
+    document.body.style.cursor = 'ew-resize';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+    const containerRect = mainContainer.getBoundingClientRect();
+    let newWidth = containerRect.right - e.clientX;
+    newWidth = Math.max(250, Math.min(800, newWidth));
+    chatSection.style.width = newWidth + 'px';
+    mainContainer.style.gridTemplateColumns = `1fr auto ${newWidth}px`;
+});
+
+document.addEventListener('mouseup', function() {
+    isResizing = false;
+    document.body.style.cursor = '';
 });
