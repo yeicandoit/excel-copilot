@@ -16,11 +16,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to send message to background script
     async function sendToBackground(message) {
+        // 从 excel-viewer.js 获取 Excel 内容
+        let excelData = '';
+        if (window.getExcelDataAsText) {
+            try {
+                excelData = await window.getExcelDataAsText();
+            } catch (e) {
+                console.warn('Failed to get Excel data:', e);
+            }
+        }
+        // 将 Excel 内容加入到 message
+        const fullMessage = excelData
+            ? `${message}\n\n[Excel内容]:\n${excelData}`
+            : message;
+
         return new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(
                 { 
                     type: 'CHAT_MESSAGE',
-                    message: message
+                    message: fullMessage
                 },
                 response => {
                     if (chrome.runtime.lastError) {
