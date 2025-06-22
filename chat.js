@@ -81,12 +81,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         chatHistory.parentNode.insertBefore(reasoningDiv, chatHistory);
                     }
                     assistantReason += msg.reasoningContent;
-                    reasoningDiv.textContent = assistantReason;
+                    reasoningDiv.innerHTML = marked.parse(assistantReason);
                 }
                 // 处理 assistant 内容
                 if (msg.content) {
                     assistantContent += msg.content;
-                    assistantDiv.textContent = assistantContent;
+                    assistantDiv.innerHTML = marked.parse(assistantContent);
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                 }
             } else if (msg.type === 'CHAT_ERROR') {
