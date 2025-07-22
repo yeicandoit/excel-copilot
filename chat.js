@@ -68,20 +68,48 @@ document.addEventListener('DOMContentLoaded', function() {
             if (msg.type === 'CHAT_STREAM') {
                 // 处理 reasoningContent
                 if (msg.reasoningContent) {
-                    let reasoningDiv = document.getElementById('reasoningContent');
-                    if (!reasoningDiv) {
-                        reasoningDiv = document.createElement('div');
-                        reasoningDiv.id = 'reasoningContent';
-                        reasoningDiv.style.background = '#fffbe6';
-                        reasoningDiv.style.border = '1px solid #ffe58f';
-                        reasoningDiv.style.padding = '8px 12px';
-                        reasoningDiv.style.marginBottom = '10px';
-                        reasoningDiv.style.borderRadius = '8px';
-                        reasoningDiv.style.color = '#ad8b00';
-                        chatHistory.parentNode.insertBefore(reasoningDiv, chatHistory);
+                    let reasoningContainer = document.getElementById('reasoningContainer');
+                    if (!reasoningContainer) {
+                        reasoningContainer = document.createElement('div');
+                        reasoningContainer.id = 'reasoningContainer';
+                        reasoningContainer.style.background = '#fffbe6';
+                        reasoningContainer.style.border = '1px solid #ffe58f';
+                        reasoningContainer.style.padding = '8px 12px';
+                        reasoningContainer.style.marginBottom = '10px';
+                        reasoningContainer.style.borderRadius = '8px';
+                        reasoningContainer.style.color = '#ad8b00';
+
+                        const reasoningHeader = document.createElement('div');
+                        reasoningHeader.id = 'reasoningHeader';
+                        reasoningHeader.style.cursor = 'pointer';
+                        reasoningHeader.style.display = 'flex';
+                        reasoningHeader.style.justifyContent = 'space-between';
+                        reasoningHeader.innerHTML = `<span>thinking</span><span id="reasoningToggle">^</span>`;
+
+                        const reasoningContent = document.createElement('div');
+                        reasoningContent.id = 'reasoningContent';
+                        reasoningContent.style.marginTop = '8px';
+
+                        reasoningContainer.appendChild(reasoningHeader);
+                        reasoningContainer.appendChild(reasoningContent);
+
+                        chatHistory.parentNode.insertBefore(reasoningContainer, chatHistory);
+
+                        reasoningHeader.addEventListener('click', () => {
+                            const content = document.getElementById('reasoningContent');
+                            const toggle = document.getElementById('reasoningToggle');
+                            if (content.style.display === 'none') {
+                                content.style.display = 'block';
+                                toggle.textContent = '^';
+                            } else {
+                                content.style.display = 'none';
+                                toggle.textContent = 'v';
+                            }
+                        });
                     }
+                    const reasoningContentDiv = document.getElementById('reasoningContent');
                     assistantReason += msg.reasoningContent;
-                    reasoningDiv.innerHTML = marked.parse(assistantReason);
+                    reasoningContentDiv.innerHTML = marked.parse(assistantReason);
                 }
                 // 处理 assistant 内容
                 if (msg.content) {
