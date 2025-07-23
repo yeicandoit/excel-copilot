@@ -57,21 +57,26 @@ document.addEventListener('DOMContentLoaded', function() {
         userInput.value = '';
 
         // Show loading/streaming state
-        const assistantDiv = addMessage('', false);
+        let assistantDiv = null;
 
         let streaming = true;
         let assistantContent = '';
         let assistantReason = '';
+        const timestamp = Date.now();
+        const reasoningContainerId = `reasoningContainer-${timestamp}`;
+        const reasoningHeaderId = `reasoningHeader-${timestamp}`;
+        const reasoningContentId = `reasoningContent-${timestamp}`;
+        const reasoningToggleId = `reasoningToggle-${timestamp}`;
 
         // Listen for streaming responses
         function onStream(msg, sender, sendResponse) {
             if (msg.type === 'CHAT_STREAM') {
                 // 处理 reasoningContent
                 if (msg.reasoningContent) {
-                    let reasoningContainer = document.getElementById('reasoningContainer');
+                    let reasoningContainer = document.getElementById(reasoningContainerId);
                     if (!reasoningContainer) {
                         reasoningContainer = document.createElement('div');
-                        reasoningContainer.id = 'reasoningContainer';
+                        reasoningContainer.id = reasoningContainerId;
                         reasoningContainer.style.background = '#fffbe6';
                         reasoningContainer.style.border = '1px solid #ffe58f';
                         reasoningContainer.style.padding = '8px 12px';
@@ -80,24 +85,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         reasoningContainer.style.color = '#ad8b00';
 
                         const reasoningHeader = document.createElement('div');
-                        reasoningHeader.id = 'reasoningHeader';
+                        reasoningHeader.id = reasoningHeaderId;
                         reasoningHeader.style.cursor = 'pointer';
                         reasoningHeader.style.display = 'flex';
                         reasoningHeader.style.justifyContent = 'space-between';
-                        reasoningHeader.innerHTML = `<span>thinking</span><span id="reasoningToggle">^</span>`;
+                        reasoningHeader.innerHTML = `<span>thinking</span><span id="${reasoningToggleId}">^</span>`;
 
                         const reasoningContent = document.createElement('div');
-                        reasoningContent.id = 'reasoningContent';
+                        reasoningContent.id = reasoningContentId;
                         reasoningContent.style.marginTop = '8px';
 
                         reasoningContainer.appendChild(reasoningHeader);
                         reasoningContainer.appendChild(reasoningContent);
 
-                        chatHistory.parentNode.insertBefore(reasoningContainer, chatHistory);
+                        chatHistory.appendChild(reasoningContainer);
+                        chatHistory.scrollTop = chatHistory.scrollHeight;
 
                         reasoningHeader.addEventListener('click', () => {
-                            const content = document.getElementById('reasoningContent');
-                            const toggle = document.getElementById('reasoningToggle');
+                            const content = document.getElementById(reasoningContentId);
+                            const toggle = document.getElementById(reasoningToggleId);
                             if (content.style.display === 'none') {
                                 content.style.display = 'block';
                                 toggle.textContent = '^';
@@ -107,12 +113,15 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         });
                     }
-                    const reasoningContentDiv = document.getElementById('reasoningContent');
+                    const reasoningContentDiv = document.getElementById(reasoningContentId);
                     assistantReason += msg.reasoningContent;
                     reasoningContentDiv.innerHTML = marked.parse(assistantReason);
                 }
                 // 处理 assistant 内容
                 if (msg.content) {
+                    if (!assistantDiv) {
+                        assistantDiv = addMessage('', false);
+                    }
                     assistantContent += msg.content;
                     assistantDiv.innerHTML = marked.parse(assistantContent);
                     chatHistory.scrollTop = chatHistory.scrollHeight;
