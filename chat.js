@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else if (msg.type === 'CHAT_ERROR') {
                 streaming = false;
-                assistantDiv.textContent = msg.error;
+                console.error(msg.error);
                 chrome.runtime.onMessage.removeListener(onStream);
             }
         }
