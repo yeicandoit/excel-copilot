@@ -123,6 +123,27 @@
             </div>
         </div>
     </div>
+    <div id="settingsIcon" style="position: absolute; top: 16px; right: 24px; cursor: pointer; z-index: 1001; width: 24px; height: 24px;">
+        <img src="images/settings-icon.svg" style="width: 100%; height: 100%;" alt="Settings" />
+    </div>
+    <div id="settingsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.25); z-index: 2000; justify-content: center; align-items: center;">
+      <div style="background: #fff; padding: 32px 24px 24px 24px; border-radius: 12px; min-width: 320px; box-shadow: 0 2px 16px rgba(0,0,0,0.15); position: relative;">
+          <div style="position: absolute; top: 12px; right: 16px; cursor: pointer; width: 20px; height: 20px;" id="closeSettings">
+            <img src="images/close-icon.svg" style="width: 100%; height: 100%;" alt="Close" />
+          </div>
+        <h2 style="margin-top: 0;">Settings</h2>
+        <div style="margin-bottom: 16px;">
+          <label for="openaiBaseUrl" style="display: block; margin-bottom: 4px;">OpenAI Base URL</label>
+          <input type="text" id="openaiBaseUrl" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;" placeholder="e.g. https://api.openai.com/v1" />
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label for="openaiToken" style="display: block; margin-bottom: 4px;">OpenAI Token</label>
+          <input type="password" id="openaiToken" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;" placeholder="sk-..." />
+        </div>
+        <button id="saveSettingsBtn" style="width: 100%; padding: 8px 0; background: #1677ff; color: #fff; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">Save</button>
+        <div id="settingsSavedMsg" style="display:none; color: #52c41a; margin-top: 12px; text-align: center;">Have saved！</div>
+      </div>
+    </div>
     <script src="libs/exceljs.min.js"></script>
     <script src="libs/marked.min.js"></script>
     <script src="excel-viewer.js"></script>

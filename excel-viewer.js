@@ -64,3 +64,59 @@ excelFileInput.addEventListener('change', async (e) => {
 window.getExcelDataAsText = async function() {
     return currentExcelText;
 };
+
+// 设置面板逻辑
+const settingsIcon = document.getElementById('settingsIcon');
+const settingsModal = document.getElementById('settingsModal');
+const closeSettings = document.getElementById('closeSettings');
+const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+const openaiBaseUrlInput = document.getElementById('openaiBaseUrl');
+const openaiTokenInput = document.getElementById('openaiToken');
+const settingsSavedMsg = document.getElementById('settingsSavedMsg');
+
+// 显示设置面板并填充已保存的值
+settingsIcon.addEventListener('click', () => {
+    settingsModal.style.display = 'flex';
+    // 读取已保存的设置
+    if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.get(['openaiBaseUrl', 'openaiToken'], (result) => {
+            openaiBaseUrlInput.value = result.openaiBaseUrl || '';
+            openaiTokenInput.value = result.openaiToken || '';
+        });
+    } else {
+        // fallback: localStorage
+        openaiBaseUrlInput.value = localStorage.getItem('openaiBaseUrl') || '';
+        openaiTokenInput.value = localStorage.getItem('openaiToken') || '';
+    }
+    settingsSavedMsg.style.display = 'none';
+});
+
+// 关闭设置面板
+closeSettings.addEventListener('click', () => {
+    settingsModal.style.display = 'none';
+});
+
+// 保存设置
+saveSettingsBtn.addEventListener('click', () => {
+    const baseUrl = openaiBaseUrlInput.value.trim();
+    const token = openaiTokenInput.value.trim();
+    if (chrome && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ openaiBaseUrl: baseUrl, openaiToken: token }, () => {
+            settingsSavedMsg.style.display = 'block';
+            setTimeout(() => { settingsSavedMsg.style.display = 'none'; }, 1500);
+        });
+    } else {
+        // fallback: localStorage
+        localStorage.setItem('openaiBaseUrl', baseUrl);
+        localStorage.setItem('openaiToken', token);
+        settingsSavedMsg.style.display = 'block';
+        setTimeout(() => { settingsSavedMsg.style.display = 'none'; }, 1500);
+    }
+});
+
+// 点击模态框外部关闭
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) {
+        settingsModal.style.display = 'none';
+    }
+});

@@ -29,7 +29,14 @@
     }
   ],
   "web_accessible_resources": [{
-    "resources": ["excel-viewer.html", "excel-viewer.js", "libs/exceljs.min.js", "chat.js"],
+    "resources": [
+      "excel-viewer.html",
+      "excel-viewer.js",
+      "libs/exceljs.min.js",
+      "chat.js",
+      "images/close-icon.svg",
+      "images/settings-icon.svg"
+    ],
     "matches": ["<all_urls>"]
   }],
   "icons": {
