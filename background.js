@@ -45,14 +45,47 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Excel Assistant extension installed');
 });
 
+async function getOpenAIConfig() {
+    return new Promise((resolve, reject) => {
+        if (chrome && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.get(['openaiToken', 'openaiBaseUrl'], (result) => {
+                let token = result.openaiToken;
+                let baseUrl = result.openaiBaseUrl;
+                // fallback to localStorage if not found
+                if ((!token || !baseUrl) && typeof localStorage !== 'undefined') {
+                    token = token || localStorage.getItem('openaiToken');
+                    baseUrl = baseUrl || localStorage.getItem('openaiBaseUrl');
+                }
+                if (!token || !baseUrl) {
+                    reject(new Error('没有设置openaiBaseUrl'));
+                } else {
+                    resolve({ token, baseUrl });
+                }
+            });
+        } else if (typeof localStorage !== 'undefined') {
+            const token = localStorage.getItem('openaiToken');
+            const baseUrl = localStorage.getItem('openaiBaseUrl');
+            if (!token || !baseUrl) {
+                reject(new Error('没有设置openaiBaseUrl'));
+            } else {
+                resolve({ token, baseUrl });
+            }
+        } else {
+            reject(new Error('没有设置openaiBaseUrl'));
+        }
+    });
+}
+
 // Function to handle chat messages with OpenAI
 async function handleChatMessage(message, tabId) {
   try {
-    const response = await fetch('https://ai-gateway.vei.volces.com/v1/chat/completions', {
+    // base url e.g. https://ai-gateway.vei.volces.com/v1/chat/completions'
+    const { token, baseUrl } = await getOpenAIConfig();
+    const response = await fetch(`${baseUrl}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         model: "deepseek-reasoner",
