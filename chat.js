@@ -25,16 +25,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn('Failed to get Excel data:', e);
             }
         }
-        // 将 Excel 内容加入到 message
-        const fullMessage = excelData
-            ? `${message}\n\n[Excel内容]:\n${excelData}`
-            : message;
 
         return new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(
                 { 
                     type: 'CHAT_MESSAGE',
-                    message: fullMessage
+                    message: message,
+                    excelData: excelData
                 },
                 response => {
                     if (chrome.runtime.lastError) {
