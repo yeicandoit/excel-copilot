@@ -1,3 +1,53 @@
+// 保存聊天历史记录的数组，最多保存10条
+let chatHistory = [];
+
+// 处理流式响应的函数
+async function processStreamResponse(reader, tabId) {
+  let buffer = '';
+  let fullContent = '';
+  const decoder = new TextDecoder();
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.trim() === '') continue;
+      if (line.trim() === 'data: [DONE]') continue;
+      
+      try {
+        const jsonStr = line.replace(/^data:/, '');
+        const json = JSON.parse(jsonStr);
+        const content = json.choices[0]?.delta?.content;
+        const reasoningContent = json.choices[0]?.delta?.reasoning_content;
+
+        if (reasoningContent) {
+          chrome.tabs.sendMessage(tabId, {
+            type: 'CHAT_STREAM',
+            reasoningContent: reasoningContent
+          });
+        }
+        
+        if (content) {
+          fullContent += content; // 累积完整内容
+          chrome.tabs.sendMessage(tabId, {
+            type: 'CHAT_STREAM',
+            content: content
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing streaming response:', e);
+      }
+    }
+  }
+  
+  return fullContent;
+}
+
 // 监听来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'PROCESS_EXCEL') {
@@ -15,7 +65,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     sendResponse({ success: true });
   } else if (request.type === 'CHAT_MESSAGE') {
-    handleChatMessage(request.message, sender.tab.id)
+    handleChatMessage(request.message, request.excelData, sender.tab.id)
       .catch(error => {
         console.error('Error handling chat message:', error);
         chrome.tabs.sendMessage(sender.tab.id, {
@@ -24,6 +74,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       });
     return true; // Required for async response
+  } else if (request.type === 'GET_CHAT_HISTORY') {
+    sendResponse({ success: true, history: chatHistory });
+    return true;
+  } else if (request.type === 'CLEAR_CHAT_HISTORY') {
+    chatHistory = [];
+    sendResponse({ success: true, message: 'Chat history cleared' });
+    return true;
   }
 });
 
@@ -77,8 +134,21 @@ async function getOpenAIConfig() {
 }
 
 // Function to handle chat messages with OpenAI
-async function handleChatMessage(message, tabId) {
+async function handleChatMessage(message, excelData, tabId) {
   try {
+    const hasSystemRole = chatHistory.some(msg => msg.role === "system");
+    if (!hasSystemRole) {
+      chatHistory.push({
+        role: "system",
+        content: "You are an Excel data analysis assistant. Help users understand and analyze their Excel data.\n"+ 
+         "The Excel data is:\n " + excelData + ".\n\n"
+      });
+    }
+    chatHistory.push({
+      role: "user",
+      content: message
+    });
+    
     // base url e.g. https://ai-gateway.vei.volces.com/v1/chat/completions'
     const { token, baseUrl } = await getOpenAIConfig();
     const response = await fetch(`${baseUrl}`, {
@@ -89,16 +159,7 @@ async function handleChatMessage(message, tabId) {
       },
       body: JSON.stringify({
         model: "deepseek-reasoner",
-        messages: [
-          {
-            role: "system",
-            content: "You are an Excel data analysis assistant. Help users understand and analyze their Excel data."
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
+        messages: chatHistory,
         temperature: 0,
         stream: true
       })
@@ -108,46 +169,20 @@ async function handleChatMessage(message, tabId) {
       throw new Error('Failed to get response from OpenAI');
     }
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    // 处理流式响应
+    fullContent = await processStreamResponse(response.body.getReader(), tabId);
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.trim() === '') continue;
-        if (line.trim() === 'data: [DONE]') continue;
-        
-        try {
-          const jsonStr = line.replace(/^data:/, '');
-          const json = JSON.parse(jsonStr);
-          const content = json.choices[0]?.delta?.content;
-          const reasoningContent = json.choices[0]?.delta?.reasoning_content;
-
-          if (reasoningContent) {
-            chrome.tabs.sendMessage(tabId, {
-              type: 'CHAT_STREAM',
-              reasoningContent: reasoningContent
-            });
-          }
-          
-          if (content) {
-            chrome.tabs.sendMessage(tabId, {
-              type: 'CHAT_STREAM',
-              content: content
-            });
-          }
-        } catch (e) {
-          console.error('Error parsing streaming response:', e);
-        }
-      }
+    // 添加到数组末尾
+    chatHistory.push({
+      role: "assistant",
+      content: fullContent
+    });
+    
+    // 限制数组大小为10条
+    if (chatHistory.length > 10) {
+      chatHistory = chatHistory.slice(-10);
     }
+
   } catch (error) {
     console.error('Error calling OpenAI:', error);
     throw error;
