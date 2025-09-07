@@ -1,6 +1,8 @@
 let currentExcelText = ''; // 用于保存当前Excel的文本内容
+let currentWorkbook = null; // SheetJS 工作簿缓存
 
 const excelFileInput = document.getElementById('excelFile');
+const sheetSelect = document.getElementById('sheetSelect');
 // 监听文件选择事件
 excelFileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
@@ -12,50 +14,72 @@ excelFileInput.addEventListener('change', async (e) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     // 使用 SheetJS 读取 Excel
-    const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const container = document.getElementById('excel-container');
-    container.innerHTML = '';
+    currentWorkbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
 
-    // 将工作表转换为二维数组（包含表头）
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
+    // 填充下拉框
+    sheetSelect.innerHTML = '';
+    currentWorkbook.SheetNames.forEach((name, idx) => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      if (idx === 0) opt.selected = true;
+      sheetSelect.appendChild(opt);
+    });
+    sheetSelect.style.display = currentWorkbook.SheetNames.length > 0 ? '' : 'none';
 
-    // 创建表格
-    const table = document.createElement('table');
-
-    if (data.length > 0) {
-      // 添加表头
-      const headerRow = document.createElement('tr');
-      data[0].forEach((cellValue) => {
-        const th = document.createElement('th');
-        th.textContent = cellValue != null ? String(cellValue) : '';
-        headerRow.appendChild(th);
-      });
-      table.appendChild(headerRow);
-
-      // 添加数据行
-      for (let i = 1; i < data.length; i++) {
-        const tr = document.createElement('tr');
-        data[i].forEach((cellValue) => {
-          const td = document.createElement('td');
-          td.textContent = cellValue != null ? String(cellValue) : '';
-          tr.appendChild(td);
-        });
-        table.appendChild(tr);
-      }
+    // 渲染首个工作表
+    if (currentWorkbook.SheetNames.length > 0) {
+      renderSheet(currentWorkbook.SheetNames[0]);
     }
-
-    container.appendChild(table);
-
-    // 生成文本内容（以制表符和换行符分隔）
-    const textRows = data.map(rowArray => rowArray.map(v => (v != null ? String(v) : '')).join('\t'));
-    currentExcelText = textRows.join('\n');
   } catch (error) {
     document.getElementById('excel-container').innerHTML = 'Error loading file: ' + error.message;
     currentExcelText = '';
   }
 });
+
+// 切换工作表
+sheetSelect && sheetSelect.addEventListener('change', (e) => {
+  const sheetName = e.target.value;
+  if (currentWorkbook && sheetName) {
+    renderSheet(sheetName);
+  }
+});
+
+function renderSheet(sheetName) {
+  const container = document.getElementById('excel-container');
+  container.innerHTML = '';
+  if (!currentWorkbook || !sheetName) {
+    currentExcelText = '';
+    return;
+  }
+  const worksheet = currentWorkbook.Sheets[sheetName];
+  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
+
+  const table = document.createElement('table');
+  if (data.length > 0) {
+    const headerRow = document.createElement('tr');
+    data[0].forEach((cellValue) => {
+      const th = document.createElement('th');
+      th.textContent = cellValue != null ? String(cellValue) : '';
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    for (let i = 1; i < data.length; i++) {
+      const tr = document.createElement('tr');
+      data[i].forEach((cellValue) => {
+        const td = document.createElement('td');
+        td.textContent = cellValue != null ? String(cellValue) : '';
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    }
+  }
+  container.appendChild(table);
+
+  const textRows = data.map(rowArray => rowArray.map(v => (v != null ? String(v) : '')).join('\t'));
+  currentExcelText = textRows.join('\n');
+}
 
 // 暴露方法
 window.getExcelDataAsText = async function() {
