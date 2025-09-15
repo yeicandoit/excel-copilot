@@ -1,6 +1,3 @@
-// 保存聊天历史记录的数组，最多保存10条
-let chatHistory = [];
-
 // 处理流式响应的函数
 async function processStreamResponse(reader, tabId) {
   let buffer = '';
@@ -65,7 +62,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     sendResponse({ success: true });
   } else if (request.type === 'CHAT_MESSAGE') {
-    handleChatMessage(request.message, request.excelData, sender.tab.id)
+    handleChatMessage(request.messages, request.excelData, sender.tab.id)
       .catch(error => {
         console.error('Error handling chat message:', error);
         chrome.tabs.sendMessage(sender.tab.id, {
@@ -74,11 +71,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       });
     return true; // Required for async response
-  } else if (request.type === 'GET_CHAT_HISTORY') {
-    sendResponse({ success: true, history: chatHistory });
-    return true;
   } else if (request.type === 'CLEAR_CHAT_HISTORY') {
-    chatHistory = [];
     sendResponse({ success: true, message: 'Chat history cleared' });
     return true;
   }
@@ -134,20 +127,13 @@ async function getOpenAIConfig() {
 }
 
 // Function to handle chat messages with OpenAI
-async function handleChatMessage(message, excelData, tabId) {
+async function handleChatMessage(messages, excelData, tabId) {
   try {
-    const hasSystemRole = chatHistory.some(msg => msg.role === "system");
-    if (!hasSystemRole) {
-      chatHistory.push({
+      messages.unshift({
         role: "system",
         content: "You are an Excel data analysis assistant. Help users understand and analyze their Excel data.\n"+ 
          "The Excel data is:\n " + excelData + ".\n\n"
       });
-    }
-    chatHistory.push({
-      role: "user",
-      content: message
-    });
     
     // base url e.g. https://ai-gateway.vei.volces.com/v1/chat/completions'
     const { token, baseUrl } = await getOpenAIConfig();
@@ -159,7 +145,7 @@ async function handleChatMessage(message, excelData, tabId) {
       },
       body: JSON.stringify({
         model: "deepseek-reasoner",
-        messages: chatHistory,
+        messages: messages,
         temperature: 0,
         stream: true
       })
@@ -171,17 +157,6 @@ async function handleChatMessage(message, excelData, tabId) {
 
     // 处理流式响应
     fullContent = await processStreamResponse(response.body.getReader(), tabId);
-
-    // 添加到数组末尾
-    chatHistory.push({
-      role: "assistant",
-      content: fullContent
-    });
-    
-    // 限制数组大小为10条
-    if (chatHistory.length > 10) {
-      chatHistory = chatHistory.slice(-10);
-    }
 
   } catch (error) {
     console.error('Error calling OpenAI:', error);
