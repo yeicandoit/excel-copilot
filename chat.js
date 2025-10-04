@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to send message to background script
-    async function sendToBackground(message) {
+    async function sendToBackground(messages) {
         // 从 excel-viewer.js 获取 Excel 内容
         let excelData = '';
         if (window.getExcelDataAsText) {
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
             chrome.runtime.sendMessage(
                 { 
                     type: 'CHAT_MESSAGE',
-                    message: message,
+                    messages: messages,  // 发送消息列表
                     excelData: excelData
                 },
                 response => {
@@ -44,14 +44,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Function to get all messages from current session
+    function getAllSessionMessages() {
+        const messages = [];
+        const messageElements = chatHistory.querySelectorAll('.message');
+        
+        messageElements.forEach(element => {
+            const isUser = element.classList.contains('user-message');
+            const content = element.textContent.trim();
+            if (content) {
+                messages.push({
+                    role: isUser ? 'user' : 'assistant',
+                    content: content
+                });
+            }
+        });
+        
+        return messages;
+    }
+
     // Handle send button click
     sendButton.addEventListener('click', async function() {
-        const message = userInput.value.trim();
-        if (!message) return;
+        const currentMessage = userInput.value.trim();
+        if (!currentMessage) return;
 
         // Add user message to chat
-        addMessage(message, true);
+        addMessage(currentMessage, true);
         userInput.value = '';
+
+        // Get all messages from current session
+        const sessionMessages = getAllSessionMessages();
+        sessionMessages.push({
+            role: "user",
+            content: currentMessage
+        });
 
         // Show loading/streaming state
         let assistantDiv = null;
@@ -112,7 +138,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     const reasoningContentDiv = document.getElementById(reasoningContentId);
                     assistantReason += msg.reasoningContent;
-                    reasoningContentDiv.innerHTML = marked.parse(assistantReason);
+                    // 流式传输过程中使用 textContent，避免重复解析
+                    reasoningContentDiv.textContent = assistantReason;
                 }
                 // 处理 assistant 内容
                 if (msg.content) {
@@ -120,12 +147,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         assistantDiv = addMessage('', false);
                     }
                     assistantContent += msg.content;
-                    assistantDiv.innerHTML = marked.parse(assistantContent);
+                    // 流式传输过程中使用 textContent，避免重复解析
+                    assistantDiv.textContent = assistantContent;
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                 }
+            } else if (msg.type === 'CHAT_STREAM_END') {
+                // 流式传输结束时进行 Markdown 解析
+                if (assistantReason) {
+                    const reasoningContentDiv = document.getElementById(reasoningContentId);
+                    if (reasoningContentDiv) {
+                        reasoningContentDiv.innerHTML = marked.parse(assistantReason);
+                    }
+                }
+                if (assistantContent) {
+                    if (assistantDiv) {
+                        assistantDiv.innerHTML = marked.parse(assistantContent);
+                    }
+                }
+                streaming = false;
+                chrome.runtime.onMessage.removeListener(onStream);
             } else if (msg.type === 'CHAT_ERROR') {
                 streaming = false;
-                console.error(msg.error);
+                console.error('message error:', msg.error);
                 chrome.runtime.onMessage.removeListener(onStream);
             }
         }
@@ -133,10 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // Get response from background script (starts streaming)
-            await sendToBackground(message);
+            // 发送当前会话的所有消息
+            await sendToBackground(sessionMessages);
         } catch (error) {
             streaming = false;
-            assistantDiv.textContent = 'Sorry, I encountered an error while processing your request.';
+            console.error('sendToBackground error:', error);
             chrome.runtime.onMessage.removeListener(onStream);
         }
     });
