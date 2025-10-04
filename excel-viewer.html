@@ -102,6 +102,9 @@
             color: #212529;
             margin-right: auto;
         }
+        #clearChat:hover {
+            background-color: #ff5252;
+        }
     </style>
 </head>
 <body>
@@ -116,7 +119,10 @@
         </div>
         <div class="resizer" id="resizer"></div>
         <div class="chat-section" id="chatSection">
-            <h2>Chat Assistant</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h2 style="margin: 0;">Chat Assistant</h2>
+                <button id="clearChat" style="padding: 6px 12px; background-color: #ff6b6b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Clear Chat</button>
+            </div>
             <div id="chatHistory" class="chat-history"></div>
             <div class="input-section">
                 <textarea id="userInput" placeholder="Ask me anything about your Excel data..."></textarea>
