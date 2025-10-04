@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const chatHistory = document.getElementById('chatHistory');
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendMessage');
+    const clearChatButton = document.getElementById('clearChat');
 
     // Function to add a message to the chat history
     function addMessage(content, isUser = false) {
@@ -74,15 +75,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Get all messages from current session
         const sessionMessages = getAllSessionMessages();
-        sessionMessages.push({
-            role: "user",
-            content: currentMessage
-        });
 
         // Show loading/streaming state
         let assistantDiv = null;
 
-        let streaming = true;
         let assistantContent = '';
         let assistantReason = '';
         const timestamp = Date.now();
@@ -164,10 +160,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         assistantDiv.innerHTML = marked.parse(assistantContent);
                     }
                 }
-                streaming = false;
+                chatHistory.scrollTop = chatHistory.scrollHeight;
                 chrome.runtime.onMessage.removeListener(onStream);
             } else if (msg.type === 'CHAT_ERROR') {
-                streaming = false;
                 console.error('message error:', msg.error);
                 chrome.runtime.onMessage.removeListener(onStream);
             }
@@ -179,7 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // 发送当前会话的所有消息
             await sendToBackground(sessionMessages);
         } catch (error) {
-            streaming = false;
             console.error('sendToBackground error:', error);
             chrome.runtime.onMessage.removeListener(onStream);
         }
@@ -191,6 +185,18 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             sendButton.click();
         }
+    });
+
+    // Handle clear chat button click
+    clearChatButton.addEventListener('click', function() {
+        // Clear all messages from chat history
+        chatHistory.innerHTML = '';
+ 
+        // Clear the input field
+        userInput.value = '';
+ 
+        // Focus back to input field for better UX
+        userInput.focus();
     });
 });
 
