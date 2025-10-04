@@ -6,7 +6,10 @@ async function processStreamResponse(reader, tabId) {
   
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) {
+      chrome.tabs.sendMessage(tabId, {type: 'CHAT_STREAM_END'});
+      break;
+    }
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');

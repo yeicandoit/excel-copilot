@@ -138,7 +138,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     const reasoningContentDiv = document.getElementById(reasoningContentId);
                     assistantReason += msg.reasoningContent;
-                    reasoningContentDiv.innerHTML = marked.parse(assistantReason);
+                    // 流式传输过程中使用 textContent，避免重复解析
+                    reasoningContentDiv.textContent = assistantReason;
                 }
                 // 处理 assistant 内容
                 if (msg.content) {
@@ -146,12 +147,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         assistantDiv = addMessage('', false);
                     }
                     assistantContent += msg.content;
-                    assistantDiv.innerHTML = marked.parse(assistantContent);
+                    // 流式传输过程中使用 textContent，避免重复解析
+                    assistantDiv.textContent = assistantContent;
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                 }
+            } else if (msg.type === 'CHAT_STREAM_END') {
+                // 流式传输结束时进行 Markdown 解析
+                if (assistantReason) {
+                    const reasoningContentDiv = document.getElementById(reasoningContentId);
+                    if (reasoningContentDiv) {
+                        reasoningContentDiv.innerHTML = marked.parse(assistantReason);
+                    }
+                }
+                if (assistantContent) {
+                    if (assistantDiv) {
+                        assistantDiv.innerHTML = marked.parse(assistantContent);
+                    }
+                }
+                streaming = false;
+                chrome.runtime.onMessage.removeListener(onStream);
             } else if (msg.type === 'CHAT_ERROR') {
                 streaming = false;
-                console.error(msg.error);
+                console.error('message error:', msg.error);
                 chrome.runtime.onMessage.removeListener(onStream);
             }
         }
@@ -163,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             await sendToBackground(sessionMessages);
         } catch (error) {
             streaming = false;
-            assistantDiv.textContent = 'Sorry, I encountered an error while processing your request.';
+            console.error('sendToBackground error:', error);
             chrome.runtime.onMessage.removeListener(onStream);
         }
     });
