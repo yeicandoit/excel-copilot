@@ -58,23 +58,35 @@ const ChatInterface = ({ excelData, settings }) => {
       // Remove loading message
       setMessages(prev => prev.filter(msg => msg.id !== loadingMessage.id));
 
+      // Initialize accumulator for streaming content
+      let accumulatedContent = '';
+      let accumulatedReasoningContent = '';
+
       // Send to API with streaming
-      await sendChatMessage(apiMessages, excelData, settings, (content, reasoningContent) => {
+      await sendChatMessage(apiMessages, excelData, settings, (deltaContent, deltaReasoningContent) => {
+        // Accumulate incremental content
+        if (deltaContent) {
+          accumulatedContent += deltaContent;
+        }
+        if (deltaReasoningContent) {
+          accumulatedReasoningContent += deltaReasoningContent;
+        }
+
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1];
           if (lastMessage && !lastMessage.isUser) {
-            // Update existing assistant message
+            // Update existing assistant message with accumulated content
             return prev.map(msg => 
               msg.id === lastMessage.id 
-                ? { ...msg, content: content, reasoningContent: reasoningContent }
+                ? { ...msg, content: accumulatedContent, reasoningContent: accumulatedReasoningContent }
                 : msg
             );
           } else {
-            // Add new assistant message
+            // Add new assistant message with accumulated content
             return [...prev, {
               id: Date.now() + Math.random(),
-              content,
-              reasoningContent,
+              content: accumulatedContent,
+              reasoningContent: accumulatedReasoningContent,
               isUser: false,
               timestamp: new Date()
             }];
@@ -84,12 +96,13 @@ const ChatInterface = ({ excelData, settings }) => {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove loading message and add error message
+      // Remove loading message and add error message with details
+      const errorMessage = error.message || 'Sorry, I encountered an error while processing your request.';
       setMessages(prev => {
         const filtered = prev.filter(msg => msg.id !== loadingMessage.id);
         return [...filtered, {
           id: Date.now() + Math.random(),
-          content: 'Sorry, I encountered an error while processing your request.',
+          content: `**Error:** ${errorMessage}\n\nPlease check:\n1. The API server is running\n2. The proxy configuration is correct\n3. Network connectivity`,
           isUser: false,
           timestamp: new Date()
         }];
@@ -111,9 +124,9 @@ const ChatInterface = ({ excelData, settings }) => {
   };
 
   const renderMessage = (message) => {
-    const content = message.reasoningContent 
-      ? marked.parse(message.reasoningContent)
-      : marked.parse(message.content);
+    // Parse content and reasoningContent separately
+    const parsedContent = message.content ? marked.parse(message.content) : '';
+    const parsedReasoningContent = message.reasoningContent ? marked.parse(message.reasoningContent) : '';
 
     return (
       <div key={message.id} className={`message ${message.isUser ? 'user-message' : 'assistant-message'}`}>
@@ -125,14 +138,21 @@ const ChatInterface = ({ excelData, settings }) => {
             </div>
             <div 
               className="reasoning-content"
-              dangerouslySetInnerHTML={{ __html: marked.parse(message.reasoningContent) }}
+              dangerouslySetInnerHTML={{ __html: parsedReasoningContent }}
             />
           </div>
         )}
-        <div 
-          className="message-content"
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
+        {parsedContent && (
+          <div 
+            className="message-content"
+            dangerouslySetInnerHTML={{ __html: parsedContent }}
+          />
+        )}
+        {!parsedContent && !parsedReasoningContent && (
+          <div className="message-content">
+            <em>No content available</em>
+          </div>
+        )}
       </div>
     );
   };

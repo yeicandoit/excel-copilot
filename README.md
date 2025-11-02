@@ -2,7 +2,7 @@
 
 Excel Copilot是一个多平台的AI驱动Excel数据分析助手，提供两种使用方式：
 
-1. **Web应用** - 基于React前端和Rust Actix Web后端的完整Web应用
+1. **Web应用** - 基于React前端的Web应用
 2. **Chrome扩展** - 浏览器扩展，可在任何网页上直接分析Excel文件
 
 ## 项目架构
@@ -10,20 +10,13 @@ Excel Copilot是一个多平台的AI驱动Excel数据分析助手，提供两种
 ### 整体结构
 ```
 excel-copilot/
-├── web/                    # Web应用 (前后端分离)
-│   ├── frontend/           # React前端应用
-│   │   ├── src/
-│   │   │   ├── components/    # React组件
-│   │   │   ├── services/      # API服务
-│   │   │   └── ...
-│   │   └── package.json
-│   ├── backend/            # Rust Actix Web后端
-│   │   ├── src/
-│   │   │   ├── handlers/      # 请求处理器
-│   │   │   ├── services/      # 业务逻辑服务
-│   │   │   ├── models/        # 数据模型
-│   │   │   └── ...
-│   │   └── Cargo.toml
+├── web/                    # Web应用
+│   ├── src/
+│   │   ├── components/     # React组件
+│   │   ├── services/       # API服务
+│   │   └── ...
+│   ├── public/             # 静态文件
+│   ├── package.json
 │   ├── docker-compose.yml  # Docker编排配置
 │   └── nginx.conf          # Nginx配置
 ├── chrome-extension/       # Chrome浏览器扩展
@@ -61,19 +54,11 @@ excel-copilot/
 
 ### Web应用技术栈
 
-#### 前端
 - **React 18** - 用户界面框架
 - **CSS3** - 响应式设计
 - **Axios** - HTTP客户端
 - **XLSX.js** - Excel文件处理
 - **Marked** - Markdown渲染
-
-#### 后端
-- **Rust** - 系统编程语言
-- **Actix Web** - Web框架
-- **Reqwest** - HTTP客户端
-- **Serde** - 序列化/反序列化
-- **Tokio** - 异步运行时
 
 ### Chrome扩展技术栈
 - **Manifest V3** - 扩展清单格式
@@ -102,21 +87,13 @@ docker-compose up --build
 ```
 
 3. 访问应用
-- 前端: http://localhost:3000
-- 后端API: http://localhost:8080
+- Web应用: http://localhost:3000
 - 通过Nginx: http://localhost
 
 #### 本地开发
 
-**后端开发**
 ```bash
-cd web/backend
-cargo run
-```
-
-**前端开发**
-```bash
-cd web/frontend
+cd web
 npm install
 npm start
 ```
@@ -159,12 +136,9 @@ cd excel-copilot
 
 #### 环境变量
 
-**后端环境变量**
-- `PORT`: 服务端口 (默认: 8080)
-- `RUST_LOG`: 日志级别 (默认: info)
-
-**前端环境变量**
-- `REACT_APP_API_URL`: 后端API地址 (默认: http://localhost:8080)
+- `REACT_APP_OPENAI_API_URL`: OpenAI API地址 (默认: /v1/chat/completions)
+- `REACT_APP_OPENAI_API_KEY`: OpenAI API密钥
+- `REACT_APP_PROXY_TARGET`: 代理目标地址 (默认: http://10.230.66.32:8080)
 
 ### Chrome扩展配置
 
@@ -183,30 +157,7 @@ cd excel-copilot
 
 ## API接口 (Web应用)
 
-### 聊天接口
-```
-POST /api/chat
-Content-Type: application/json
-
-{
-  "messages": [
-    {"role": "user", "content": "分析这个Excel数据"}
-  ],
-  "excel_data": "Excel数据文本",
-  "settings": {
-    "openai_base_url": "https://api.openai.com/v1",
-    "openai_token": "sk-..."
-  }
-}
-```
-
-### 健康检查接口
-```
-GET /api/health
-```
-
-### 流式响应
-Web应用支持Server-Sent Events (SSE)流式响应，实现实时AI对话体验。
+Web应用通过代理方式调用外部API服务（如OpenAI兼容的API），支持流式响应实现实时AI对话体验。
 
 ## 部署指南
 
@@ -229,10 +180,6 @@ server {
     location / {
         proxy_pass http://localhost:3000;
     }
-    
-    location /api/ {
-        proxy_pass http://localhost:8080;
-    }
 }
 ```
 
@@ -240,14 +187,8 @@ server {
 
 **Heroku**
 ```bash
-# 后端部署
-cd web/backend
-heroku create your-app-backend
-git push heroku main
-
-# 前端部署
-cd web/frontend
-heroku create your-app-frontend
+cd web
+heroku create your-app
 git push heroku main
 ```
 
@@ -282,20 +223,12 @@ zip -r excel-assistant-extension.zip .
 
 #### 添加新功能
 
-1. **前端组件**: 在 `web/frontend/src/components/` 中创建新组件
-2. **API接口**: 在 `web/backend/src/handlers/` 中添加新的处理器
-3. **业务逻辑**: 在 `web/backend/src/services/` 中实现业务逻辑
+1. **组件**: 在 `web/src/components/` 中创建新组件
+2. **API服务**: 在 `web/src/services/` 中实现API调用逻辑
 
 #### 代码规范
 
-- **前端**: 使用ESLint和Prettier
-- **后端**: 使用rustfmt和clippy
-```bash
-# 后端代码格式化
-cd web/backend
-cargo fmt
-cargo clippy
-```
+- 使用ESLint和Prettier
 
 ### Chrome扩展开发
 
@@ -322,9 +255,9 @@ cargo clippy
 
 ### Web应用常见问题
 
-1. **CORS错误**: 确保后端CORS配置正确
+1. **CORS错误**: 检查代理配置是否正确
 2. **文件上传失败**: 检查文件大小限制和格式支持
-3. **API连接失败**: 验证后端服务是否正常运行
+3. **API连接失败**: 验证API服务是否正常运行
 4. **Docker启动失败**: 检查端口占用和Docker配置
 
 ### Chrome扩展常见问题
@@ -340,12 +273,10 @@ cargo clippy
 ```bash
 # Docker日志
 cd web
-docker-compose logs -f backend
-docker-compose logs -f frontend
+docker-compose logs -f
 
 # 本地开发日志
-# 后端: 控制台输出
-# 前端: 浏览器开发者工具
+# 浏览器开发者工具查看控制台输出
 ```
 
 #### Chrome扩展日志
@@ -379,7 +310,6 @@ docker-compose logs -f frontend
 ### Web应用适用场景
 - 需要完整功能的数据分析工作台
 - 团队协作和共享分析结果
-- 需要服务器端处理和存储
 - 企业级部署和管理
 
 ### Chrome扩展适用场景
@@ -397,7 +327,6 @@ docker-compose logs -f frontend
 2. 使用HTTPS
 3. 实施API速率限制
 4. 添加用户认证和授权
-5. 使用生产级数据库替代内存存储
 
 ### Chrome扩展
 1. 通过Chrome Web Store审核
