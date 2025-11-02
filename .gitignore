@@ -1,1 +1,2 @@
-web/backend/target
+web/build/
+web/node_modules
