@@ -1,12 +1,8 @@
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
+FROM nginx:trixie-perl
+COPY ./build /var/excel-copilot
+COPY ./startup.sh /var/excel-copilot
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+WORKDIR /var/excel-copilot
+RUN chmod 755 startup.sh
+ENTRYPOINT ["sh", "./startup.sh"]
