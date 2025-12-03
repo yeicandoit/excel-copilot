@@ -80,10 +80,11 @@ git clone <repository-url>
 cd excel-copilot
 ```
 
-2. 启动Web应用
-```bash
-cd web
-docker-compose up --build
+2. 启动nginx
+
+```
+# 直接使用host network nginx目的是方便访问后端接口
+docker run -d --name nginx --network host -v ./build:/var/excel-copilot -v ./nginx.conf:/etc/nginx/nginx.conf  nginx:trixie-perl nginx -g 'daemon off;'
 ```
 
 3. 访问应用
